@@ -1,0 +1,98 @@
+.Dd $Mdocdate$
+.Dt dp 1
+.Os dp 1.0
+.Sh NAME
+.Nm dp
+.Nd directory pipe 1.0
+.Sh SYNOPSIS
+.Nm
+.Bk -words
+.Op Fl h
+.Ek
+.Nm
+.Bk -words
+.Op Fl k
+.Op Fl i Ar '%i'
+.Op Fl o Ar '%o'
+.Op Fl t Ar '/tmp'
+.Ar cmd
+.Op Ar args ...
+.Sh DESCRIPTION
+.Nm
+wraps the execution of a command working from an input
+directory to an output directory. The main goal is to
+chain such wrapped commands, so as to progressively compile
+an input directory to an output directory, in a series
+of simple passes, without having to deal with creating
+and removing temporary locations. The chaining is expected
+to be performed by reading/writing
+.Xr tar 1
+compressed directories through standard UNIX
+.Xr pipe 7 .
+.Pp
+This can be useful for prototyping, and more generally,
+for software without strong performance requirements. A
+static site generator is a typical use-case.
+.Sh OPTIONS
+If at least one of the specified command
+.Ar cmd 's
+arguments,
+.Ar args ,
+matches exactly the placeholder specified by
+.Fl i ,
+which default to %i, then
+.Nm
+reads a
+.Xr tar 1
+archive from stdin,  uncompresses it to a temporary location,
+systematically replaces the placeholder by the path
+to this temporary location, then finally executes the command.
+.Pp
+If no such pattern is specified,
+.Nm
+forwards its stdin to the command and executes it.
+.Pp
+If at least one of the specified command
+.Ar cmd 's
+arguments,
+.Ar args ,
+matches exactly the placeholder specified by
+.Fl o ,
+which default to %o, then
+.Nm
+systematically replaces the placeholder by the path to
+a newly created temporary location, then executes the command.
+After the command's execution, this location is compressed to a
+.Xr tar 1
+archive, itself finally sent to stdout.
+.Pp
+.Nm
+always redirects the command's stdout/stderr to
+.Nm
+\& 's stderr. In particular, this avoids messing up an eventual
+.Xr tar 1
+output.
+.Pp
+The
+.Fl t
+flag changes the base directory for temporary locations, which
+(should) default to /tmp.
+.Pp
+If the command execution fails (non-zero status), no
+.Xr tar 1
+archive is sent to stdout, and
+.Nm
+will borrow the command's exit code.
+.Pp
+The temporary locations are systematically removed unless the
+.Fl k
+flag is enabled. In which case they are kept, and displayed on
+stderr before processing the input/command.
+.Sh EXAMPLE
+Here's how an arbitrary three passes directory compilation
+can be implemented:
+.Bd -literal -offset indent
+      dp prepare   "$ind" '%o'   \\
+    | dp act       '%i'   '%o'   \\
+    | dp finish    '%i'   "$outd"
+.Ed
