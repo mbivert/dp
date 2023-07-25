@@ -15,7 +15,7 @@ dp: dp.go
 .PHONY: update-doc
 update-doc: dp.1
 	@echo Updating README.md...
-	@(echo '# dp(1) - Directory Pipe';echo; man ./dp.1 | sed 's/^/    /') > README.md
+	@(echo '# dp(1) - Directory Pipe';echo; COLUMNS=80 man ./dp.1 | sed 's/^/    /') > README.md
 
 .PHONY: install
 install: dp
@@ -30,4 +30,3 @@ uninstall:
 	@rm -f ${dir}/dp
 	@echo Removing ${mandir}/dp.1...
 	@rm -f ${mandir}/dp.1
-
