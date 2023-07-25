@@ -125,8 +125,12 @@ func getIn() error {
 			return err
 		}
 
+		// NOTE: can't ignore despite the later MkdirAll()
+		// on files' directory (because of potentially empty
+		// directory)
 		if hdr.Typeflag == tar.TypeDir {
-			if err := os.MkdirAll(hdr.Name, os.ModePerm); err != nil {
+			dir := filepath.Join(ind, hdr.Name)
+			if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 				return err
 			}
 			continue
